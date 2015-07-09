@@ -43,7 +43,10 @@ AccessFileName .htaccess
 </Files>
 
 <Directory /> 
-    Options -Indexes 
+    Options -Indexes -Includes -ExecCGI
+    <LimitExcept GET POST HEAD>
+       deny from all
+    </LimitExcept>
 </Directory>
 
 HostnameLookups Off
@@ -77,4 +80,13 @@ ServerTokens Full
 
 ErrorDocument 404 "Archivo no encontrado"
 ErrorDocument 500 "Tareas de mantenimiento en curso. Disculpe las molestias"
+
+<IfModule mod_headers.c>
+   Header always append X-Frame-Options SAMEORIGIN
+   Header edit Set-Cookie ^(.*)$ $1;HttpOnly;Secure
+   Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+FileETag None
+TraceEnable off
 
