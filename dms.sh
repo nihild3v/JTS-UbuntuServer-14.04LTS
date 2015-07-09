@@ -343,7 +343,8 @@ function extrasec_steps() {
     apt-get purge at
     echo " Asegurando Cron "
     touch /etc/cron.allow
-    chmod
+    chmod 600 /etc/cron.allow
+    awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/cron.deny
     say_done
 }
 
