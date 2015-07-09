@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# JackTheStripper v1.0 beta 1
+# JackTheStripper v2.0
 # Deployer for Ubuntu Server 14.04 LTS
 # 
 # @license      http://www.gnu.org/licenses/gpl.txt  GNU GPL 3.0
@@ -107,35 +107,27 @@ function ssh_reconfigure() {
 #  8. Establecer reglas para iptables
 function set_iptables_rules() {
     write_title "8. Establecer reglas para iptables (firewall)"
-    cat templates/iptables > /etc/iptables.firewall.rules
-    iptables-restore < /etc/iptables.firewall.rules
+    sh templates/iptables.sh
+    cp templates/iptables.sh /etc/init.d/
+    ln -s /etc/init.d/iptables.sh /etc/rc2.d/S99iptables.sh
     say_done
 }
 
 
-#  9. Crear script de automatizacion iptables
-function create_iptable_script() {
-    write_title "9. Crear script de automatización de reglas de iptables tras reinicio"
-    cat templates/firewall > /etc/network/if-pre-up.d/firewall
-    chmod +x /etc/network/if-pre-up.d/firewall
-    say_done
-}
-
-
-# 10. Instalar fail2ban
+# 9. Instalar fail2ban
 function install_fail2ban() {
     # para eliminar una regla de fail2ban en iptables utilizar:
     # iptables -D fail2ban-ssh -s IP -j DROP
-    write_title "10. Instalar Sendmail y fail2ban"
+    write_title "9. Instalar Sendmail y fail2ban"
     apt-get install sendmail
     apt-get install fail2ban
     say_done
 }
 
 
-# 11. Instalar, Configurar y Optimizar MySQL
+# 10. Instalar, Configurar y Optimizar MySQL
 function install_mysql() {
-    write_title "11. Instalar MySQL"
+    write_title "10. Instalar MySQL"
     apt-get install mysql-server
     echo -n " configurando MySQL............ "
     cp templates/mysql /etc/mysql/my.cnf; echo " OK"
@@ -145,9 +137,9 @@ function install_mysql() {
 }
 
 
-# 12. Instalar, configurar y optimizar PHP
+# 11. Instalar, configurar y optimizar PHP
 function install_php() {
-    write_title "12. Instalar PHP 5 + Apache 2"
+    write_title "11. Instalar PHP 5 + Apache 2"
     apt-get install apache2
     apt-get install php5 php5-cli php-pear
     apt-get install php5-mysql python-mysqldb
@@ -159,21 +151,20 @@ function install_php() {
 }
 
 
-# 13. Instalar ModSecurity
+# 12. Instalar ModSecurity
 function install_modsecurity() {
-    write_title "13. Instalar ModSecurity"
+    write_title "12. Instalar ModSecurity"
     apt-get install libxml2 libxml2-dev libxml2-utils
     apt-get install libaprutil1 libaprutil1-dev
     apt-get install libapache2-mod-security2
-
     service apache2 restart
     say_done
 }
 
 
-# 14. Configurar OWASP para ModSecuity
+# 13. Configurar OWASP para ModSecuity
 function install_owasp_core_rule_set() {
-    write_title "14. Instalar OWASP ModSecurity Core Rule Set"
+    write_title "13. Instalar OWASP ModSecurity Core Rule Set"
 
     for archivo in /usr/share/modsecurity-crs/base_rules/*
         do ln -s $archivo /usr/share/modsecurity-crs/activated_rules/
@@ -197,9 +188,9 @@ function install_owasp_core_rule_set() {
 }
 
 
-# 15. Configurar y optimizar Apache
+# 14. Configurar y optimizar Apache
 function configure_apache() {
-    write_title "15. Finalizar configuración y optimización de Apache"
+    write_title "14. Finalizar configuración y optimización de Apache"
     cp templates/apache /etc/apache2/apache2.conf
     echo " -- habilitar ModRewrite"
     a2enmod rewrite
@@ -208,9 +199,9 @@ function configure_apache() {
 }
 
 
-# 16. Instalar ModEvasive
+# 15. Instalar ModEvasive
 function install_modevasive() {
-    write_title "16. Instalar ModEvasive"
+    write_title "15. Instalar ModEvasive"
     echo -n " Indique e-mail para recibir alertas: "; read inbox
     apt-get install libapache2-mod-evasive
     mkdir /var/log/mod_evasive
@@ -220,6 +211,16 @@ function install_modevasive() {
     say_done
 }
 
+# 16. Instalar Mod_qos/spamhaus
+function install_modqosspam() {
+    write_title "16. Instalar Mod_qos/spamhaus"
+    apt-get -y install libapache2-mod-qos
+    cp templates/qos /etc/apache2/mods-available/qos.conf
+    apt-get -y install libapache2-mod-spamhaus
+    cp templates/spamhaus /etc/apache2/mods-available/spamhaus.conf
+    service apache2 restart
+    say_done
+}
 
 # 17. Configurar fail2ban
 function config_fail2ban() {
@@ -259,9 +260,21 @@ function tunning_kernel() {
     say_done
 }
 
-# 20. Tunnear el archivo .bashrc
+# 20. Instalar RootKit Hunter
+function install_rootkithunter() {
+    write_title "20. Instalar Rootkit Hunter"
+    sh rkhunter-1.4.2/installer.sh --layout /usr --install
+    rkhunter --update
+    rkhunter --propupd
+    echo " *** Para correr RootKit Hunter solo debe ejecutar ***"
+    echo "     rkhunter -c --enable all --disable none"
+    echo "     Puede ver el reporte detallado en /var/log/rkhunter.log"
+    say_done
+}
+
+# 21. Tunnear el archivo .bashrc
 function tunning_bashrc() {
-    write_title "20. Reemplazar .bashrc"
+    write_title "21. Reemplazar .bashrc"
     cp templates/bashrc-root /root/.bashrc
     cp templates/bashrc-user /home/$username/.bashrc
     chown $username:$username /home/$username/.bashrc
@@ -269,23 +282,23 @@ function tunning_bashrc() {
 }
 
 
-# 21. Tunnear Vim
+# 22. Tunnear Vim
 function tunning_vim() {
-    write_title "21. Tunnear Vim"
+    write_title "22. Tunnear Vim"
     tunning vimrc
 }
 
 
-# 22. Tunnear Nano
+# 23. Tunnear Nano
 function tunning_nano() {
-    write_title "22. Tunnear Nano"
+    write_title "23. Tunnear Nano"
     tunning nanorc
 }
 
 
-# 23. Agregar tarea de actualización diaria
+# 24. Agregar tarea de actualización diaria
 function add_updating_task() {
-    write_title "23. Agregar tarea de actualización diaria al Cron"
+    write_title "24. Agregar tarea de actualización diaria al Cron"
     tarea="@daily apt-get update; apt-get dist-upgrade -y"
     touch tareas
     echo $tarea >> tareas
@@ -295,17 +308,17 @@ function add_updating_task() {
 }
 
 
-# 24. Agregar comandos personalizados
+# 25. Agregar comandos personalizados
 function add_commands() {
-    write_title "24. Agregar comandos personalizados"
+    write_title "25. Agregar comandos personalizados"
     add_command_blockip     # Agregar regla bloqueo a iptables
     say_done
 }
 
 
-# 25. Instalar PortSentry
+# 26. Instalar PortSentry
 function install_portsentry() {
-    write_title "# 25. Instalar y configurar el antiscan de puertos PortSentry"
+    write_title "# 26. Instalar y configurar el antiscan de puertos PortSentry"
     apt-get install portsentry
     mv /etc/portsentry/portsentry.conf /etc/portsentry/portsentry.conf-original
     cp templates/portsentry /etc/portsentry/portsentry.conf
@@ -315,10 +328,28 @@ function install_portsentry() {
     say_done
 }
 
+# 27. Otros pasos de Seguridad
+function extrasec_steps() {
+    write_title "# 27. Asegurando tty, y conf grub"
+    echo tty1 > /etc/securetty
+    chmod 700 /root
+    chmod 600 /boot/grub/grub.cfg
+    say_done
+}
 
-# 25. Reiniciar servidor
+# 28. Instalar Unhide
+function install_unhide() {
+    write_title "#28. Instalando Unhide"
+    apt-get -y install unhide
+    echo " Unhide es una Herramienta para Detectar Procesos Ocultos "
+    echo " Para más información sobre la Herramienta ver los manpages "
+    echo " man unhide "
+    say_done
+}
+
+# 29. Reiniciar servidor
 function final_step() {
-    write_title "26. Finalizar deploy"
+    write_title "29. Finalizar deploy"
     replace USERNAME $username SERVERIP $serverip < templates/texts/bye
     echo -n " ¿Ha podido conectarse por SHH como $username? (y/n) "
     read respuesta
@@ -340,22 +371,25 @@ give_instructions               #  5. Instrucciones para generar una RSA Key
 move_rsa                        #  6. Mover la llave pública RSA generada
 ssh_reconfigure                 #  7. Securizar SSH
 set_iptables_rules              #  8. Establecer reglas para iptables
-create_iptable_script           #  9. Crear script de automatizacion iptables
-install_fail2ban                # 10. Instalar fail2ban
-install_mysql                   # 11. Instalar, Configurar y Optimizar MySQL
-install_php                     # 12. Instalar, configurar y optimizar PHP
-install_modsecurity             # 13. Instalar ModSecurity
-install_owasp_core_rule_set     # 14. Instalar OWASP para ModSecuity
-configure_apache                # 15. Configurar y optimizar Apache
-install_modevasive              # 16. Instalar ModEvasive
+install_fail2ban                #  9. Instalar fail2ban
+install_mysql                   # 10. Instalar, Configurar y Optimizar MySQL
+install_php                     # 11. Instalar, configurar y optimizar PHP
+install_modsecurity             # 12. Instalar ModSecurity
+install_owasp_core_rule_set     # 13. Instalar OWASP para ModSecuity
+configure_apache                # 14. Configurar y optimizar Apache
+install_modevasive              # 15. Instalar ModEvasive
+install_modqosspam              # 16. Instalar Mod_qos/spamhaus
 config_fail2ban                 # 17. Configurar fail2ban
 install_aditional_packages      # 18. Instalación de paquetes adicionales
 tunning_kernel                  # 19. Asegurar Kernel
-tunning_bashrc                  # 20. Tunnear el archivo .bashrc
-tunning_vim                     # 21. Tunnear Vim
-tunning_nano                    # 22. Tunnear Nano
-add_updating_task               # 23. Agregar tarea de actualización diaria
-add_commands                    # 24. Agregar comandos personalizados
-install_portsentry              # 25. Instalar PortSentry
-final_step                      # 26. Reiniciar servidor
+install_rootkithunter           # 20. Instalar RootKitHunter
+tunning_bashrc                  # 21. Tunnear el archivo .bashrc
+tunning_vim                     # 22. Tunnear Vim
+tunning_nano                    # 23. Tunnear Nano
+add_updating_task               # 24. Agregar tarea de actualización diaria
+add_commands                    # 25. Agregar comandos personalizados
+install_portsentry              # 26. Instalar PortSentry
+extrasec_steps                  # 27. Otros pasos de Seguridad
+install_unhide                  # 28. Instalar Unhide
+final_step                      # 29. Reiniciar servidor
 
