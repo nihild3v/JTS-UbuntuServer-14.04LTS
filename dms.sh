@@ -338,7 +338,7 @@ function extrasec_steps() {
     chmod 700 /root
     chmod 600 /boot/grub/grub.cfg
     #Proteger contra IP Spoofing
-    echo >> nospoof on /etc/host.conf
+    echo nospoof on >> /etc/host.conf
     #Desinstalar AT y Restringiendo Cron a Root
     apt-get purge at
     echo " Asegurando Cron "
