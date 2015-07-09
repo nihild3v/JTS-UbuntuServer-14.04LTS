@@ -256,6 +256,7 @@ function install_aditional_packages() {
 function tunning_kernel() {
     write_title "19. Tunear Kernel"
     cp templates/sysctl.conf /etc/sysctl.conf; echo " OK"
+    cp templates/ufw /etc/default/ufw
     sysctl -e -p
     say_done
 }
@@ -263,7 +264,9 @@ function tunning_kernel() {
 # 20. Instalar RootKit Hunter
 function install_rootkithunter() {
     write_title "20. Instalar Rootkit Hunter"
-    sh rkhunter-1.4.2/installer.sh --layout /usr --install
+    cd rkhunter-1.4.2/
+    sh installer.sh --layout /usr --install
+    cd ..
     rkhunter --update
     rkhunter --propupd
     echo " *** Para correr RootKit Hunter solo debe ejecutar ***"
@@ -334,6 +337,13 @@ function extrasec_steps() {
     echo tty1 > /etc/securetty
     chmod 700 /root
     chmod 600 /boot/grub/grub.cfg
+    #Proteger contra IP Spoofing
+    echo >> nospoof on /etc/host.conf
+    #Desinstalar AT y Restringiendo Cron a Root
+    apt-get purge at
+    echo " Asegurando Cron "
+    touch /etc/cron.allow
+    chmod
     say_done
 }
 
@@ -347,9 +357,48 @@ function install_unhide() {
     say_done
 }
 
-# 29. Reiniciar servidor
+# 29. Instalar Tiger
+#Tiger es un sistema de Auditorías y Detección de Intrusos
+function install_tiger() {
+    write_title " #29. Instalando Tiger "
+    apt-get -y install tiger
+    echo " Para más información sobre la Herramienta, ver los manpages "
+    echo " man tiger "
+    say_done
+}
+
+
+#30. Deshabilitar Compiladores
+function disable_compilers() {
+    write_title " 30. Deshabilitando Compiladores "
+    chmod 000 /usr/bin/byacc
+    chmod 000 /usr/bin/yacc
+    chmod 000 /usr/bin/bcc
+    chmod 000 /usr/bin/kgcc
+    chmod 000 /usr/bin/cc
+    chmod 000 /usr/bin/gcc
+    chmod 000 /usr/bin/*c++
+    chmod 000 /usr/bin/*g++
+    echo " Si desea utilizarlo mas adelante solo debe cambiar los permisos chmod 755"
+    echo " Ejemplo: chmod 755 /usr/bin/gcc "
+    say_done
+}
+
+#31. Restringir Acceso Archivos Conf. Apache
+function restrict_apacheconf() {
+     write_title " 31. Restringiendo acceso Archivos Conf. Apache "
+     chmod 750 /etc/apache2/conf*
+     chmod 511 /usr/bin/apache2
+     chmod 750 /var/log/apache2/
+     chmod 640 /etc/apache2/conf-available/*
+     chmod 640 /etc/apache2/conf-enabled/*
+     chmod 640 /etc/apache2/apache2.conf
+     say_done
+}
+
+# 32. Reiniciar servidor
 function final_step() {
-    write_title "29. Finalizar deploy"
+    write_title "32. Finalizar deploy"
     replace USERNAME $username SERVERIP $serverip < templates/texts/bye
     echo -n " ¿Ha podido conectarse por SHH como $username? (y/n) "
     read respuesta
@@ -391,5 +440,8 @@ add_commands                    # 25. Agregar comandos personalizados
 install_portsentry              # 26. Instalar PortSentry
 extrasec_steps                  # 27. Otros pasos de Seguridad
 install_unhide                  # 28. Instalar Unhide
-final_step                      # 29. Reiniciar servidor
+install_tiger                   # 29. Instalar Tiger
+disable_compilers               # 30. Deshabilitar Compiladores
+restrict_apacheconf             # 31. Restringir Acceso Archivos Conf. Apache
+final_step                      # 32. Reiniciar servidor
 
