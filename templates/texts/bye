@@ -1,14 +1,10 @@
 
-    AVISO:
-    
-    Este servidor debe ser reiniciado.
-    Antes de continuar, abra una nueva terminal e intente acceder por SSH
-    con el usuario USERNAME, ejecutando:
+    MESSAGE:
+
+    This Server must be Rebooted.
+    Before proceeding, open up a Terminal and connect to this Server Via SSH
     ssh -p 372 USERNAME@SERVERIP
-    
-    ***** SOLO SI HA PODIDO ACCEDER COMO EL USUARIO USERNAME RESPONDA "y" *****
-    
-    y luego pulse la tecla Enter. Caso contrario, interrumpa este script 
-    manualmente sin cerrar su conexión al servidor.
 
+    *****ONLY IF YOU WERE ABLE TO ACCESS, RESPOND "y" *****
 
+    And then Press Enter. Otherwise Interrupt this Script to Maintain Connection

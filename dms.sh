@@ -2,7 +2,7 @@
 
 # JackTheStripper v2.0
 # Deployer for Ubuntu Server 14.04 LTS
-# 
+#
 # @license      http://www.gnu.org/licenses/gpl.txt  GNU GPL 3.0
 # @author       Eugenia Bahit <ebahit@linux.com>
 # @link         http://www.eugeniabahit.com/proyectos/jackthestripper
@@ -11,160 +11,218 @@
 
 source helpers.sh
 
+##############################################################################################################
 
-# 0. Verificar si es usuario root o no 
-function is_root_user() {
-    if [ "$USER" != "root" ]; then
-        echo "Permiso denegado."
-        echo "Este programa solo puede ser ejecutado por el usuario root"
-        exit
-    else
-        clear
-        cat templates/texts/welcome
-    fi
+f_banner(){
+echo
+echo "
+     _            _    _____ _          ____  _        _
+    | | __ _  ___| | _|_   _| |__   ___/ ___|| |_ _ __(_)_ __  _ __   ___ _ __
+ _  | |/ _  |/ __| |/ / | | | '_ \ / _ \___ \| __| '__| | '_ \| '_ \ / _ \ '__|
+| |_| | (_| | (__|   <  | | | | | |  __/___) | |_| |  | | |_) | |_) |  __/ |
+ \___/ \__,_|\___|_|\_\ |_| |_| |_|\___|____/ \__|_|  |_| .__/| .__/ \___|_|
+                                                         |_|  |_|
+
+For Ubuntu Server 14.04 LTS
+By Jason Soto "
+echo
+echo
+
 }
 
+##############################################################################################################
 
-# 1. Configurar Hostname
-function set_hostname() {
-    write_title "1. Configurar Hostname"
-    echo -n " ¿Desea configurar un hostname? (y/n): "; read config_host
-    if [ "$config_host" == "y" ]; then
-        serverip=$(__get_ip)
-        echo " Ingrese un nombre para identificar a este servidor"
-        echo -n " (por ejemplo: myserver) "; read host_name
-        echo -n " ¿Cuál será el dominio principal? "; read domain_name
-        echo $host_name > /etc/hostname
-        hostname -F /etc/hostname
-        echo "127.0.0.1    localhost.localdomain      localhost" >> /etc/hosts
-        echo "$serverip    $host_name.$domain_name    $host_name" >> /etc/hosts
-    fi
+#Check if running with root User
+
+clear
+f_banner
+
+if [ "$USER" != "root" ]; then
+      echo "Permission Denied"
+      echo "Can only be run by root"
+      exit
+else
+      clear
+      f_banner
+      cat templates/texts/welcome
+fi
+
+# 1. Configure Hostname
+echo -e "\e[93m[?]\e[00m ¿Do you Wish to Set a HostName? (y/n): "; read config_host
+if [ "$config_host" == "y" ]; then
+    serverip=$(__get_ip)
+    echo " Type a Name to Identify this server"
+    echo -n " (For Example: myserver) "; read host_name
+    echo -n " ¿Type Domain Name? "; read domain_name
+    echo $host_name > /etc/hostname
+    hostname -F /etc/hostname
+    echo "127.0.0.1    localhost.localdomain      localhost" >> /etc/hosts
+    echo "$serverip    $host_name.$domain_name    $host_name" >> /etc/hosts
+fi
     say_done
-}
 
 
-# 2. Configurar zona horaria
-function set_hour() {
-    write_title "2. Configuración de la zona horaria"
-    dpkg-reconfigure tzdata
-    say_done
-}
 
+# 2. Configure TimeZone
+   clear
+   f_banner
+   echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+   echo -e "\e[93m[+]\e[00m We will now Configure the TimeZone"
+   echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+   echo ""
+   sleep 10
+   dpkg-reconfigure tzdata
+   say_done
 
-#  3. Actualizar el sistema
-function sysupdate() {
-    write_title "3. Actualización del sistema"
-    apt-get update
-    apt-get upgrade -y
-    say_done
-}
+#  3. Update System
+   clear
+   f_banner
+   echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+   echo -e "\e[93m[+]\e[00m Updating the System"
+   echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+   echo ""
+   apt-get update
+   apt-get upgrade -y
+   say_done
 
-
-#  4. Crear un nuevo usuario con privilegios
-function set_new_user() {
-    write_title "4. Creación de un nuevo usuario"
-    echo -n " Indique un nombre para el nuevo usuario: "; read username
+#  4. Create Privileged User
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m We will now Create a New Privileged User"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo -e "\e[93m[?]\e[00m Type the new username: "; read username
     adduser $username
     usermod -a -G sudo $username
     say_done
-}
 
 
-#  5. Instrucciones para generar una RSA Key
-function give_instructions() {
+#  5. Instruction to Generate RSA Keys
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Instructions to Generate an RSA KEY PAIR"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     serverip=$(__get_ip)
-    write_title "5. Generación de llave RSA en su ordenador local"
-    echo " *** SI NO TIENE UNA LLAVE RSA PÚBLICA EN SU ORDENADOR, GENERE UNA ***"
-    echo "     Siga las instrucciones y pulse INTRO cada vez que termine una"
-    echo "     tarea para recibir una nueva instrucción"
+    echo " *** IF YOU DONT HAVE A PUBLIC RSA KEY, GENERATE ONE ***"
+    echo "     Follow the Instruction and Hit Enter When Done"
+    echo "     To receive a new Instruction"
     echo " "
-    echo "     EJECUTE LOS SIGUIENTES COMANDOS:"
+    echo "    RUN THE FOLLOWING COMMANDS"
     echo -n "     a) ssh-keygen -t rsa -b 4096 "; read foo1
     echo -n "     b) cat /home/$username/.ssh/id_rsa.pub >> /home/$username/.ssh/authorized_keys: "; read foo2
     say_done
-}
 
 
-#  6. Mover la llave pública RSA generada
-function move_rsa() {
-    write_title "6. Se moverá la llave pública RSA generada en el paso 5"
-    echo " Ejecute el comando a Continuación para copiar la llave"
-    echo " Presione ENTER cuando haya Finalizado "
+#  6. Move the Generated Public Key
+    echo " Run the Following Command to copy the Key"
+    echo " Press ENTER when done "
     echo " ssh-copy-id -i $HOME/.ssh/id_rsa.pub $username@$serverip "
     say_done
-}
 
 
-#  7. Securizar SSH
-function ssh_reconfigure() {
-    write_title "7. Securizar accesos SSH"
-    sed s/USERNAME/$username/g templates/sshd_config > /etc/ssh/sshd_config
+
+#  7.Secure SSH
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Securing SSH"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo -n " Securing SSH..."
+    spinner
+    sed s/USERNAME/$username/g templates/sshd_config > /etc/ssh/sshd_config; echo "OK"
     service ssh restart
     say_done
-}
 
 
-#  8. Establecer reglas para iptables
-function set_iptables_rules() {
-    write_title "8. Establecer reglas para iptables (firewall)"
+#  8. Set IPTABLES Rules
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Setting IPTABLE RULES"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo -n " Setting Iptables Rules..."
+    spinner
     sh templates/iptables.sh
     cp templates/iptables.sh /etc/init.d/
     ln -s /etc/init.d/iptables.sh /etc/rc2.d/S99iptables.sh
     say_done
-}
 
 
-# 9. Instalar fail2ban
-function install_fail2ban() {
-    # para eliminar una regla de fail2ban en iptables utilizar:
+# 9. Install fail2ban
+    # To Remove a Fail2Ban rule use:
     # iptables -D fail2ban-ssh -s IP -j DROP
-    write_title "9. Instalar Sendmail y fail2ban"
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing Fail2Ban"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get install sendmail
     apt-get install fail2ban
     say_done
-}
 
 
-# 10. Instalar, Configurar y Optimizar MySQL
-function install_mysql() {
-    write_title "10. Instalar MySQL"
+
+# 10. Install, Configure and Optimize MySQL
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing, Configuring and Optimizing MySQL"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get install mysql-server
-    echo -n " configurando MySQL............ "
+    echo -n " configuring MySQL............ "
     cp templates/mysql /etc/mysql/my.cnf; echo " OK"
     mysql_secure_installation
     service mysql restart
     say_done
-}
 
 
-# 11. Instalar, configurar y optimizar PHP
-function install_php() {
-    write_title "11. Instalar PHP 5 + Apache 2"
+# 11. Install, Configure and Optimize PHP
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing, Configuring and Optimizing PHP"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get install apache2
     apt-get install php5 php5-cli php-pear
     apt-get install php5-mysql python-mysqldb
-    echo -n " reemplazando archivo de configuración php.ini..."
+    echo -n " Replacing php.ini..."
     cp templates/php /etc/php5/apache2/php.ini; echo " OK"
     cp templates/php /etc/php5/cli/php.ini; echo " OK"
     service apache2 restart
     say_done
-}
 
 
-# 12. Instalar ModSecurity
-function install_modsecurity() {
-    write_title "12. Instalar ModSecurity"
+
+# 12. Install ModSecurity
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing ModSecurity"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get install libxml2 libxml2-dev libxml2-utils
     apt-get install libaprutil1 libaprutil1-dev
     apt-get install libapache2-mod-security2
     service apache2 restart
     say_done
-}
 
 
-# 13. Configurar OWASP para ModSecuity
-function install_owasp_core_rule_set() {
-    write_title "13. Instalar OWASP ModSecurity Core Rule Set"
+
+# 13. Configure OWASP for ModSecuity
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Setting UP OWASP Rules for ModSecurity"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
 
     for archivo in /usr/share/modsecurity-crs/base_rules/*
         do ln -s $archivo /usr/share/modsecurity-crs/activated_rules/
@@ -173,11 +231,12 @@ function install_owasp_core_rule_set() {
     for archivo in /usr/share/modsecurity-crs/optional_rules/*
         do ln -s $archivo /usr/share/modsecurity-crs/activated_rules/
     done
+    spinner
     echo "OK"
 
     sed s/SecRuleEngine\ DetectionOnly/SecRuleEngine\ On/g /etc/modsecurity/modsecurity.conf-recommended > salida
     mv salida /etc/modsecurity/modsecurity.conf
-    
+
     echo 'SecServerSignature "AntiChino Server 1.0.4 LS"' >> /usr/share/modsecurity-crs/modsecurity_crs_10_setup.conf
     echo 'Header set X-Powered-By "Plankalkül 1.0"' >> /usr/share/modsecurity-crs/modsecurity_crs_10_setup.conf
     echo 'Header set X-Mamma "Mama mia let me go"' >> /usr/share/modsecurity-crs/modsecurity_crs_10_setup.conf
@@ -185,143 +244,196 @@ function install_owasp_core_rule_set() {
     a2enmod headers
     service apache2 restart
     say_done
-}
 
 
-# 14. Configurar y optimizar Apache
-function configure_apache() {
-    write_title "14. Finalizar configuración y optimización de Apache"
+
+# 14. Configure and optimize Apache
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Optimizing Apache"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     cp templates/apache /etc/apache2/apache2.conf
-    echo " -- habilitar ModRewrite"
+    echo " -- Enabling ModRewrite"
+    spinner
     a2enmod rewrite
     service apache2 restart
     say_done
-}
 
 
-# 15. Instalar ModEvasive
-function install_modevasive() {
-    write_title "15. Instalar ModEvasive"
-    echo -n " Indique e-mail para recibir alertas: "; read inbox
+
+# 15. Install ModEvasive
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing ModEvasive"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo -n " Type Email to Receive Alerts "; read inbox
     apt-get install libapache2-mod-evasive
     mkdir /var/log/mod_evasive
     chown www-data:www-data /var/log/mod_evasive/
     sed s/MAILTO/$inbox/g templates/mod-evasive > /etc/apache2/mods-available/mod-evasive.conf
     service apache2 restart
     say_done
-}
 
-# 16. Instalar Mod_qos/spamhaus
-function install_modqosspam() {
-    write_title "16. Instalar Mod_qos/spamhaus"
+
+# 16. Install Mod_qos/spamhaus
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing Mod_Qos/Spamhaus"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get -y install libapache2-mod-qos
     cp templates/qos /etc/apache2/mods-available/qos.conf
     apt-get -y install libapache2-mod-spamhaus
     cp templates/spamhaus /etc/apache2/mods-available/spamhaus.conf
     service apache2 restart
     say_done
-}
 
-# 17. Configurar fail2ban
-function config_fail2ban() {
-    write_title "17. Finalizar configuración de fail2ban"
+
+# 17. Configure fail2ban
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Configuring Fail2Ban"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo "Configuring Fail2Ban......"
+    spinner
     sed s/MAILTO/$inbox/g templates/fail2ban > /etc/fail2ban/jail.local
     cp /etc/fail2ban/jail.local /etc/fail2ban/jail.conf
     /etc/init.d/fail2ban restart
     say_done
-}
 
 
-# 18. Instalación de paquetes adicionales
-function install_aditional_packages() {
-    write_title "18. Instalación de paquetes adicionales"
-    echo "18.1. Instalar Bazaar..........."; apt-get install bzr
-    echo "18.2. Instalar tree............."; apt-get install tree
-    echo "18.3. Instalar Python-MySQLdb..."; apt-get install python-mysqldb
-    echo "18.4. Instalar WSGI............."; apt-get install libapache2-mod-wsgi
-    echo "18.5. Instalar PIP.............."; apt-get install python-pip
-    echo "18.6. Instalar Vim.............."; apt-get install vim
-    echo "18.7. Instalar Nano............."; apt-get install nano
-    echo "18.8. Instalar pear............."; apt-get install php-pear
-    echo "18.9. Instalar PHPUnit..........";
+# 18. Install Additional Packages
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing Additional Packages"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo "Install tree............."; apt-get install tree
+    echo "Install Python-MySQLdb..."; apt-get install python-mysqldb
+    echo "Install WSGI............."; apt-get install libapache2-mod-wsgi
+    echo "Install PIP.............."; apt-get install python-pip
+    echo "Install Vim.............."; apt-get install vim
+    echo "Install Nano............."; apt-get install nano
+    echo "Install pear............."; apt-get install php-pear
+    echo "Install PHPUnit..........";
     pear config-set auto_discover 1
     mv phpunit-patched /usr/share/phpunit
     echo include_path = ".:/usr/share/phpunit:/usr/share/phpunit/PHPUnit" >> /etc/php5/apache2/php.ini
     echo include_path = ".:/usr/share/phpunit:/usr/share/phpunit/PHPUnit" >> /etc/php5/cli/php.ini
     service apache2 restart
     say_done
-}
 
-# 19. Tunear y Asegurar Kernel
-function tunning_kernel() {
-    write_title "19. Tunear Kernel"
+
+# 19. Tune and Secure Kernel
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Tunning and Securing the Linux Kernel"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo "Securing Linux Kernel"
+    spinner
     cp templates/sysctl.conf /etc/sysctl.conf; echo " OK"
     cp templates/ufw /etc/default/ufw
     sysctl -e -p
     say_done
-}
 
-# 20. Instalar RootKit Hunter
-function install_rootkithunter() {
-    write_title "20. Instalar Rootkit Hunter"
+
+# 20. Install RootKit Hunter
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing RootKit Hunter"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     cd rkhunter-1.4.2/
     sh installer.sh --layout /usr --install
     cd ..
     rkhunter --update
     rkhunter --propupd
-    echo " *** Para correr RootKit Hunter solo debe ejecutar ***"
+    echo " ***To Run RootKit Hunter ***"
     echo "     rkhunter -c --enable all --disable none"
     echo "     Puede ver el reporte detallado en /var/log/rkhunter.log"
     say_done
-}
 
-# 21. Tunnear el archivo .bashrc
-function tunning_bashrc() {
-    write_title "21. Reemplazar .bashrc"
+
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Tunning bashrc, nano and Vim"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+
+# 21. Tune .bashrc
+    echo "Tunning .bashrc......"
+    spinner
     cp templates/bashrc-root /root/.bashrc
     cp templates/bashrc-user /home/$username/.bashrc
     chown $username:$username /home/$username/.bashrc
+    echo "OK"
     say_done
-}
 
 
-# 22. Tunnear Vim
-function tunning_vim() {
-    write_title "22. Tunnear Vim"
+
+# 22. Tune Vim
+    echo "Tunning Vim......"
+    spinner
     tunning vimrc
-}
+    echo "OK"
 
 
-# 23. Tunnear Nano
-function tunning_nano() {
-    write_title "23. Tunnear Nano"
+# 23. Tune Nano
+    echo "Tunning Vim......"
+    spinner
     tunning nanorc
-}
+    echo "OK"
 
 
-# 24. Agregar tarea de actualización diaria
-function add_updating_task() {
-    write_title "24. Agregar tarea de actualización diaria al Cron"
-    tarea="@daily apt-get update; apt-get dist-upgrade -y"
-    touch tareas
-    echo $tarea >> tareas
-    crontab tareas
-    rm tareas
+# 24. Add Daily Update Cron Job
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Adding Daily System Udpdate Cron Job"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo "Creating Daily Cron Job"
+    spinner
+    job="@daily apt-get update; apt-get dist-upgrade -y"
+    touch job
+    echo $job >> job
+    crontab job
+    rm job
     say_done
-}
 
 
-# 25. Agregar comandos personalizados
-function add_commands() {
-    write_title "25. Agregar comandos personalizados"
-    add_command_blockip     # Agregar regla bloqueo a iptables
+
+# 25. Add Personalized Command
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Adding Block IP Command"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    add_command_blockip     # Drop Rule for Iptables
     say_done
-}
 
 
-# 26. Instalar PortSentry
-function install_portsentry() {
-    write_title "# 26. Instalar y configurar el antiscan de puertos PortSentry"
+
+# 26. Install PortSentry
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing PortSentry"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get install portsentry
     mv /etc/portsentry/portsentry.conf /etc/portsentry/portsentry.conf-original
     cp templates/portsentry /etc/portsentry/portsentry.conf
@@ -329,11 +441,17 @@ function install_portsentry() {
     mv salida.tmp /etc/default/portsentry
     /etc/init.d/portsentry restart
     say_done
-}
 
-# 27. Otros pasos de Seguridad
-function extrasec_steps() {
-    write_title "# 27. Asegurando tty, y conf grub"
+
+# 27. Additional Hardening Steps
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Running additional Hardening Steps"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo "Running Additional Hardening Steps...."
+    spinner
     echo tty1 > /etc/securetty
     chmod 700 /root
     chmod 600 /boot/grub/grub.cfg
@@ -341,37 +459,52 @@ function extrasec_steps() {
     echo nospoof on >> /etc/host.conf
     #Desinstalar AT y Restringiendo Cron a Root
     apt-get purge at
-    echo " Asegurando Cron "
+    echo " Securing Cron "
     touch /etc/cron.allow
     chmod 600 /etc/cron.allow
     awk -F: '{print $1}' /etc/passwd | grep -v root > /etc/cron.deny
+    echo "OK"
     say_done
-}
 
-# 28. Instalar Unhide
-function install_unhide() {
-    write_title "#28. Instalando Unhide"
+
+# 28. Install Unhide
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing UnHide"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get -y install unhide
-    echo " Unhide es una Herramienta para Detectar Procesos Ocultos "
-    echo " Para más información sobre la Herramienta ver los manpages "
+    echo " Unhide is a tool for Detecting Hidden Processes "
+    echo " For more info about the Tool use the manpages "
     echo " man unhide "
     say_done
-}
 
-# 29. Instalar Tiger
-#Tiger es un sistema de Auditorías y Detección de Intrusos
-function install_tiger() {
-    write_title " #29. Instalando Tiger "
+
+# 29. Install Tiger
+#Tiger is and Auditing and Intrusion Detection System
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Installing Tiger"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     apt-get -y install tiger
-    echo " Para más información sobre la Herramienta, ver los manpages "
+    echo " For More info about the Tool use the ManPages "
     echo " man tiger "
     say_done
-}
 
 
-#30. Deshabilitar Compiladores
-function disable_compilers() {
-    write_title " 30. Deshabilitando Compiladores "
+
+#30. Disable Compilers
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Disabling Compilers"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo "Disabling Compilers....."
+    spinner
     chmod 000 /usr/bin/byacc
     chmod 000 /usr/bin/yacc
     chmod 000 /usr/bin/bcc
@@ -380,69 +513,44 @@ function disable_compilers() {
     chmod 000 /usr/bin/gcc
     chmod 000 /usr/bin/*c++
     chmod 000 /usr/bin/*g++
-    echo " Si desea utilizarlo mas adelante solo debe cambiar los permisos chmod 755"
-    echo " Ejemplo: chmod 755 /usr/bin/gcc "
+    echo " If you wish to use them, just change the Permissions"
+    echo " Example: chmod 755 /usr/bin/gcc "
+    echo "OK"
     say_done
-}
 
-#31. Restringir Acceso Archivos Conf. Apache
-function restrict_apacheconf() {
-     write_title " 31. Restringiendo acceso Archivos Conf. Apache "
+
+#31. Restrict Access to Apache Config Files
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Restricting Access to Apache Config Files"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
+    echo "Restricting Access to Apache Config Files......"
+    spinner
      chmod 750 /etc/apache2/conf*
      chmod 511 /usr/bin/apache2
      chmod 750 /var/log/apache2/
      chmod 640 /etc/apache2/conf-available/*
      chmod 640 /etc/apache2/conf-enabled/*
      chmod 640 /etc/apache2/apache2.conf
+     echo "OK"
      say_done
-}
 
-# 32. Reiniciar servidor
-function final_step() {
-    write_title "32. Finalizar deploy"
+
+# 32. Reboot Server
+    clear
+    f_banner
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo -e "\e[93m[+]\e[00m Final Step"
+    echo -e "\e[34m---------------------------------------------------------------------------------------------------------\e[00m"
+    echo ""
     replace USERNAME $username SERVERIP $serverip < templates/texts/bye
-    echo -n " ¿Ha podido conectarse por SHH como $username? (y/n) "
-    read respuesta
-    if [ "$respuesta" == "y" ]; then
+    echo -n " ¿Were you able to connect via SSH to the Server using $username? (y/n) "
+    read answer
+    if [ "$answer" == "y" ]; then
         reboot
     else
-        echo "El servidor NO será reiniciado y su conexión permanecerá abierta."
+        echo "Server will not Reboot"
         echo "Bye."
     fi
-}
-
-
-is_root_user                    #  0. Verificar si es usuario root o no
-set_hostname                    #  1. Configurar Hostname
-set_hour                        #  2. Configurar zona horaria
-sysupdate                       #  3. Actualizar el sistema
-set_new_user                    #  4. Crear un nuevo usuario con privilegios
-give_instructions               #  5. Instrucciones para generar una RSA Key
-move_rsa                        #  6. Mover la llave pública RSA generada
-ssh_reconfigure                 #  7. Securizar SSH
-set_iptables_rules              #  8. Establecer reglas para iptables
-install_fail2ban                #  9. Instalar fail2ban
-install_mysql                   # 10. Instalar, Configurar y Optimizar MySQL
-install_php                     # 11. Instalar, configurar y optimizar PHP
-install_modsecurity             # 12. Instalar ModSecurity
-install_owasp_core_rule_set     # 13. Instalar OWASP para ModSecuity
-configure_apache                # 14. Configurar y optimizar Apache
-install_modevasive              # 15. Instalar ModEvasive
-install_modqosspam              # 16. Instalar Mod_qos/spamhaus
-config_fail2ban                 # 17. Configurar fail2ban
-install_aditional_packages      # 18. Instalación de paquetes adicionales
-tunning_kernel                  # 19. Asegurar Kernel
-install_rootkithunter           # 20. Instalar RootKitHunter
-tunning_bashrc                  # 21. Tunnear el archivo .bashrc
-tunning_vim                     # 22. Tunnear Vim
-tunning_nano                    # 23. Tunnear Nano
-add_updating_task               # 24. Agregar tarea de actualización diaria
-add_commands                    # 25. Agregar comandos personalizados
-install_portsentry              # 26. Instalar PortSentry
-extrasec_steps                  # 27. Otros pasos de Seguridad
-install_unhide                  # 28. Instalar Unhide
-install_tiger                   # 29. Instalar Tiger
-disable_compilers               # 30. Deshabilitar Compiladores
-restrict_apacheconf             # 31. Restringir Acceso Archivos Conf. Apache
-final_step                      # 32. Reiniciar servidor
-

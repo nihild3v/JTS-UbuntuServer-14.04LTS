@@ -1,30 +1,31 @@
 #!/bin/bash
 
-# Configuración de colores
-resaltado="\033[43m\033[30m"
-verde="\033[33m"
-normal="\033[40m\033[37m"
-
-
-# Escribir el título en colores
-function write_title() {
-    echo " "
-    echo -e "$resaltado $1 $normal"
-    say_continue
+spinner ()
+{
+    bar=" ++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    barlength=${#bar}
+    i=0
+    while ((i < 100)); do
+        n=$((i*barlength / 100))
+        printf "\e[00;34m\r[%-${barlength}s]\e[00m" "${bar:0:n}"
+        ((i += RANDOM%5+2))
+        sleep 0.02
+    done
 }
 
 
-# Mostrar mensaje "Done."
+
+# Show "Done."
 function say_done() {
     echo " "
-    echo -e "$verde Done. $normal"
+    echo -e "Done."
     say_continue
 }
 
 
-# Preguntar para continuar
+# Ask to Continue
 function say_continue() {
-    echo -n " Para SALIR, pulse la tecla x; sino, pulse ENTER para continuar..."
+    echo -n " To EXIT Press x Key, Press ENTER to Continue"
     read acc
     if [ "$acc" == "x" ]; then
         exit
@@ -33,7 +34,7 @@ function say_continue() {
 }
 
 
-# Obtener la IP del seridor
+# Obtain Server IP
 function __get_ip() {
     linea=`ifconfig eth0 | grep -e "inet\ addr:"`
     serverip=`python scripts/get_ip.py $linea`
@@ -41,7 +42,7 @@ function __get_ip() {
 }
 
 
-# Copiar archivos de configuración locales
+# Copy Local Config Files
 function tunning() {
     whoapp=$1
     cp templates/$whoapp /root/.$whoapp
@@ -51,19 +52,18 @@ function tunning() {
 }
 
 
-# Agregar el comando blockip
+# Add BlockIP Command
 function add_command_blockip() {
-    echo "  ===> blockip [IP] -- Agregar bloqueo de IP a iptables (OK)"
-    echo "  ===> unblockip [IP] -- Eliminar bloqueo de IP en iptables y route (OK)"
+    echo "  ===> blockip [IP] -- Adds IP To Block List in IPTABLES (OK)"
+    echo "  ===> unblockip [IP] -- Remove IP From Block List (OK)"
     cp commands/blockip /sbin/jts-iptables
     chmod +x /sbin/jts-iptables
     ln -s /sbin/jts-iptables /sbin/blockip
     ln -s /sbin/jts-iptables /sbin/unblockip
-    echo -n "  Agregando páginas man al manual blockip(8) y unblockip(8)"
+    echo -n "  Adding Man Pages blockip(8) and unblockip(8)"
     cp commands/manpages/blockip /usr/share/man/man8/blockip.8
     gzip -q /usr/share/man/man8/blockip.8
     cp commands/manpages/unblockip /usr/share/man/man8/unblockip.8
     gzip -q /usr/share/man/man8/unblockip.8
-    echo " (Listo!)"
+    echo " (Done!)"
 }
-
