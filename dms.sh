@@ -505,14 +505,15 @@ fi
     echo ""
     echo "Disabling Compilers....."
     spinner
-    chmod 000 /usr/bin/byacc
-    chmod 000 /usr/bin/yacc
-    chmod 000 /usr/bin/bcc
-    chmod 000 /usr/bin/kgcc
-    chmod 000 /usr/bin/cc
-    chmod 000 /usr/bin/gcc
-    chmod 000 /usr/bin/*c++
-    chmod 000 /usr/bin/*g++
+    chmod 000 /usr/bin/byacc >/dev/null 2>&1
+    chmod 000 /usr/bin/yacc >/dev/null 2>&1
+    chmod 000 /usr/bin/bcc >/dev/null 2>&1
+    chmod 000 /usr/bin/kgcc >/dev/null 2>&1
+    chmod 000 /usr/bin/cc >/dev/null 2>&1
+    chmod 000 /usr/bin/gcc >/dev/null 2>&1
+    chmod 000 /usr/bin/*c++ >/dev/null 2>&1
+    chmod 000 /usr/bin/*g++ >/dev/null 2>&1
+    spinner
     echo " If you wish to use them, just change the Permissions"
     echo " Example: chmod 755 /usr/bin/gcc "
     echo "OK"
@@ -529,7 +530,7 @@ fi
     echo "Restricting Access to Apache Config Files......"
     spinner
      chmod 750 /etc/apache2/conf*
-     chmod 511 /usr/bin/apache2
+     chmod 511 /usr/sbin/apache2
      chmod 750 /var/log/apache2/
      chmod 640 /etc/apache2/conf-available/*
      chmod 640 /etc/apache2/conf-enabled/*
