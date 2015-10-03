@@ -16,7 +16,7 @@ KeepAliveTimeout 2
 <IfModule mpm_worker_module>
     StartServers 2
     MinSpareThreads 25
-    MaxSpareThreads 75 
+    MaxSpareThreads 75
     ThreadLimit 64
     ThreadsPerChild 25
     MaxClients 150
@@ -26,7 +26,7 @@ KeepAliveTimeout 2
 <IfModule mpm_event_module>
     StartServers 2
     MinSpareThreads 25
-    MaxSpareThreads 75 
+    MaxSpareThreads 75
     ThreadLimit 64
     ThreadsPerChild 25
     MaxClients 150
@@ -42,7 +42,7 @@ AccessFileName .htaccess
     Satisfy all
 </Files>
 
-<Directory /> 
+<Directory />
     Options -Indexes -Includes -ExecCGI
     <LimitExcept GET POST HEAD>
        deny from all
@@ -81,12 +81,6 @@ ServerTokens Full
 ErrorDocument 404 "Archivo no encontrado"
 ErrorDocument 500 "Tareas de mantenimiento en curso. Disculpe las molestias"
 
-<IfModule mod_headers.c>
-   Header always append X-Frame-Options SAMEORIGIN
-   Header edit Set-Cookie ^(.*)$ $1;HttpOnly;Secure
-   Header set X-XSS-Protection "1; mode=block"
-</IfModule>
 
 FileETag None
 TraceEnable off
-
